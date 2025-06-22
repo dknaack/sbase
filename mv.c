@@ -4,16 +4,23 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "fs.h"
 #include "util.h"
 
+static int mv_iflag = 0;
 static int mv_status = 0;
 
 static int
 mv(const char *s1, const char *s2, int depth)
 {
 	struct recursor r = { .fn = rm, .follow = 'P', .flags = SILENT };
+
+	if (mv_iflag && access(s2, F_OK) == 0) {
+		if (!confirm("overwrite '%s'? ", s2))
+			return 0;
+	}
 
 	if (!rename(s1, s2))
 		return 0;
@@ -48,6 +55,10 @@ main(int argc, char *argv[])
 
 	ARGBEGIN {
 	case 'f':
+		mv_iflag = 0;
+		break;
+	case 'i':
+		mv_iflag = 1;
 		break;
 	default:
 		usage();
